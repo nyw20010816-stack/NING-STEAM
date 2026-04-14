@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>拍摄前问卷 · 摄影师</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0e0d0c;
+  --surface:#171512;
+  --surface2:#1e1b18;
+  --gold:#c4a45e;
+  --gold-dim:rgba(196,164,94,0.15);
+  --gold-border:rgba(196,164,94,0.25);
+  --text:#f0ebe2;
+  --text-muted:#8a7f6e;
+  --text-dim:#4a4540;
+  --radius:4px;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font-weight:300;}
+
+/* grain overlay */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity:.4;pointer-events:none;z-index:0;
+}
+
+.wrapper{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;}
+
+/* top bar */
+.topbar{
+  padding:24px 32px 0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.brand{font-family:'Cormorant Garamond',serif;font-size:15px;letter-spacing:.12em;color:var(--gold);font-style:italic;}
+.progress-wrap{flex:1;max-width:200px;margin-left:24px;}
+.progress-label{font-size:11px;color:var(--text-muted);letter-spacing:.08em;margin-bottom:6px;}
+.progress-bar-bg{height:1px;background:var(--text-dim);}
+.progress-bar-fill{height:1px;background:var(--gold);transition:width .5s ease;}
+
+/* main content */
+.main{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:40px 24px 80px;}
+.form-container{width:100%;max-width:560px;}
+
+/* section */
+.section{display:none;animation:fadeIn .4s ease;}
+.section.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+.section-eyebrow{
+  font-size:10px;letter-spacing:.18em;color:var(--gold);text-transform:uppercase;margin-bottom:16px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-eyebrow::after{content:'';flex:1;height:1px;background:var(--gold-border);}
+.section-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;line-height:1.3;margin-bottom:8px;}
+.section-sub{font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:36px;}
+
+/* question */
+.q-block{margin-bottom:32px;}
+.q-label{font-size:13px;color:var(--text-muted);letter-spacing:.03em;margin-bottom:12px;line-height:1.6;}
+.q-label em{color:var(--text);font-style:normal;}
+
+/* text input */
+.q-input{
+  width:100%;background:transparent;border:none;border-bottom:1px solid var(--text-dim);
+  color:var(--text);font-family:'Outfit',sans-serif;font-size:15px;font-weight:300;
+  padding:8px 0 10px;outline:none;transition:border-color .2s;
+  resize:none;
+}
+.q-input:focus{border-bottom-color:var(--gold);}
+.q-input::placeholder{color:var(--text-dim);}
+textarea.q-input{min-height:60px;line-height:1.6;}
+
+/* checkbox / radio */
+.options{display:flex;flex-direction:column;gap:8px;}
+.option-item{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:12px 14px;border:1px solid transparent;border-radius:var(--radius);
+  cursor:pointer;transition:all .15s;
+}
+.option-item:hover{background:var(--gold-dim);border-color:var(--gold-border);}
+.option-item.selected{background:var(--gold-dim);border-color:var(--gold);}
+.option-item input{display:none;}
+.option-mark{
+  width:16px;height:16px;border:1px solid var(--text-dim);border-radius:2px;
+  flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.option-item.selected .option-mark{background:var(--gold);border-color:var(--gold);}
+.option-mark svg{display:none;width:10px;height:10px;}
+.option-item.selected .option-mark svg{display:block;}
+.option-text{font-size:14px;line-height:1.5;color:var(--text-muted);}
+.option-item.selected .option-text{color:var(--text);}
+
+/* radio dot */
+.option-item.radio .option-mark{border-radius:50%;}
+.option-item.radio.selected .option-mark::after{
+  content:'';width:6px;height:6px;border-radius:50%;background:var(--bg);
+}
+.option-item.radio.selected .option-mark{background:var(--gold);}
+
+/* other input inside option */
+.other-input{
+  margin-top:8px;width:100%;background:transparent;border:none;border-bottom:1px solid var(--text-dim);
+  color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;padding:4px 0 6px;outline:none;
+  transition:border-color .2s;display:none;
+}
+.other-input:focus{border-bottom-color:var(--gold);}
+.option-item.selected .other-input{display:block;}
+.option-item.selected .other-input{border-bottom-color:var(--gold-border);}
+
+/* rating */
+.rating-wrap{display:flex;gap:6px;flex-wrap:wrap;}
+.rating-btn{
+  width:44px;height:44px;border:1px solid var(--text-dim);border-radius:var(--radius);
+  background:transparent;color:var(--text-muted);font-family:'Outfit',sans-serif;font-size:14px;
+  cursor:pointer;transition:all .15s;
+}
+.rating-btn:hover{border-color:var(--gold-border);color:var(--text);}
+.rating-btn.selected{background:var(--gold);border-color:var(--gold);color:var(--bg);}
+
+/* nav buttons */
+.nav{display:flex;gap:12px;margin-top:40px;align-items:center;}
+.btn-next{
+  background:var(--gold);color:var(--bg);border:none;
+  font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;letter-spacing:.06em;
+  padding:14px 32px;border-radius:var(--radius);cursor:pointer;transition:opacity .15s;
+}
+.btn-next:hover{opacity:.85;}
+.btn-back{
+  background:transparent;color:var(--text-muted);border:1px solid var(--text-dim);
+  font-family:'Outfit',sans-serif;font-size:13px;font-weight:300;letter-spacing:.04em;
+  padding:14px 24px;border-radius:var(--radius);cursor:pointer;transition:all .15s;
+}
+.btn-back:hover{border-color:var(--gold-border);color:var(--text);}
+.skip-text{font-size:12px;color:var(--text-dim);margin-left:auto;cursor:pointer;letter-spacing:.04em;}
+.skip-text:hover{color:var(--text-muted);}
+
+/* divider */
+.q-divider{height:1px;background:var(--text-dim);opacity:.3;margin:8px 0 32px;}
+
+/* result page */
+.result-page{display:none;animation:fadeIn .4s ease;}
+.result-page.active{display:block;}
+.result-eyebrow{font-size:10px;letter-spacing:.18em;color:var(--gold);text-transform:uppercase;margin-bottom:16px;}
+.result-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;margin-bottom:8px;}
+.result-sub{font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:32px;}
+.result-box{
+  background:var(--surface);border:1px solid var(--gold-border);border-radius:var(--radius);
+  padding:20px;font-size:13px;line-height:2;color:var(--text-muted);
+  white-space:pre-wrap;max-height:400px;overflow-y:auto;margin-bottom:20px;
+  font-family:'Outfit',sans-serif;
+}
+.result-box strong{color:var(--gold);font-weight:400;}
+.btn-copy{
+  width:100%;background:transparent;border:1px solid var(--gold);color:var(--gold);
+  font-family:'Outfit',sans-serif;font-size:13px;letter-spacing:.06em;
+  padding:14px;border-radius:var(--radius);cursor:pointer;transition:all .15s;
+  margin-bottom:12px;
+}
+.btn-copy:hover{background:var(--gold-dim);}
+.btn-copy.copied{border-color:var(--text-muted);color:var(--text-muted);}
+.result-note{font-size:11px;color:var(--text-dim);text-align:center;line-height:1.6;}
+
+/* section counter */
+.section-count{font-size:11px;color:var(--text-dim);letter-spacing:.06em;}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="topbar">
+  <div class="brand">拍摄前问卷</div>
+  <div class="progress-wrap">
+    <div class="progress-label" id="progressLabel">第 1 部分，共 5 部分</div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:20%"></div></div>
+  </div>
+</div>
+
+<div class="main">
+<div class="form-container">
+
+<!-- SECTION 1 -->
+<div class="section active" id="sec1">
+  <div class="section-eyebrow">Part 01 <span class="section-count">· 认识你</span></div>
+  <div class="section-title">先让我<br><em style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);">认识你</em></div>
+  <div class="section-sub">没有对错，随意回答。我只是想在见面之前，先知道你是谁。</div>
+
+  <div class="q-block">
+    <div class="q-label">01 · <em>你叫什么，或者希望我怎么称呼你？</em></div>
+    <input class="q-input" id="q1" type="text" placeholder="随意，昵称也可以">
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">02 · <em>你现在是做什么的？</em></div>
+    <input class="q-input" id="q2" type="text" placeholder="学生 / 工作 / 或者什么都行">
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">03 · <em>用三个词形容自己。</em><br><span style="font-size:11px;color:var(--text-dim);">比如：安静、爱笑、容易紧张……随便写</span></div>
+    <input class="q-input" id="q3" type="text" placeholder="___  ___  ___">
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">04 · <em>你有被拍照的经验吗？</em></div>
+    <div class="options">
+      <label class="option-item radio" onclick="selectRadio(this,'q4')">
+        <input type="radio" name="q4" value="几乎没有，很少拍照">
+        <div class="option-mark"></div>
+        <div class="option-text">几乎没有，很少拍照</div>
+      </label>
+      <label class="option-item radio" onclick="selectRadio(this,'q4')">
+        <input type="radio" name="q4" value="偶尔和朋友随手拍">
+        <div class="option-mark"></div>
+        <div class="option-text">偶尔和朋友随手拍</div>
+      </label>
+      <label class="option-item radio" onclick="selectRadio(this,'q4')">
+        <input type="radio" name="q4" value="拍过写真，有一些经验">
+        <div class="option-mark"></div>
+        <div class="option-text">拍过写真，有一些经验</div>
+      </label>
+      <label class="option-item radio" onclick="selectRadio(this,'q4')">
+        <input type="radio" name="q4" value="经常出镜，比较习惯">
+        <div class="option-mark"></div>
+        <div class="option-text">经常出镜，比较习惯</div>
+      </label>
+    </div>
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">05 · <em>镜头前的你通常是什么状态？</em><br><span style="font-size:11px;color:var(--text-dim);">紧张？自然？还是完全不在意？</span></div>
+    <textarea class="q-input" id="q5" placeholder="随便说说就好"></textarea>
+  </div>
+
+  <div class="nav">
+    <button class="btn-next" onclick="goTo(2)">继续 →</button>
+    <span class="skip-text" onclick="goTo(2)">跳过此部分</span>
+  </div>
+</div>
+
+<!-- SECTION 2 -->
+<div class="section" id="sec2">
+  <div class="section-eyebrow">Part 02 <span class="section-count">· 审美与感觉</span></div>
+  <div class="section-title">你想要<br><em style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);">什么感觉</em></div>
+  <div class="section-sub">这部分最重要。我设计拍摄方案，主要靠你这里的回答。</div>
+
+  <div class="q-block">
+    <div class="q-label">06 · <em>你希望照片里整体是什么感觉？</em><br><span style="font-size:11px;color:var(--text-dim);">可以多选</span></div>
+    <div class="options">
+      <label class="option-item" onclick="selectCheck(this,'q6')">
+        <input type="checkbox" value="安静、有点冷淡"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">安静、有点冷淡</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q6')">
+        <input type="checkbox" value="温柔、有点暖意"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">温柔、有点暖意</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q6')">
+        <input type="checkbox" value="有力量感、不软"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">有力量感、不软</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q6')">
+        <input type="checkbox" value="随意、像朋友随手拍的"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">随意、像朋友随手拍的</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q6')">
+        <input type="checkbox" value="有点神秘感，不太直白"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">有点神秘感，不太直白</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q6')">
+        <input type="checkbox" value="暗调、低饱和、电影感"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">暗调、低饱和、电影感</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q6')">
+        <input type="checkbox" value="明亮干净"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">明亮干净</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q6')">
+        <input type="checkbox" value="other-q6"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text" style="flex:1;">其他<input class="other-input" id="q6other" placeholder="说说看…" onclick="event.stopPropagation()"></div>
+      </label>
+    </div>
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">07 · <em>有没有存过"我想要这种感觉"的照片？</em><br><span style="font-size:11px;color:var(--text-dim);">写账号名、或描述一下那张照片的感觉都行。图可以等见面时给我看。</span></div>
+    <textarea class="q-input" id="q7" placeholder="比如：某个ins账号、某部电影的截图、某种说不清但你知道的感觉…"></textarea>
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">08 · <em>你希望照片里的你是什么状态？</em><br><span style="font-size:11px;color:var(--text-dim);">比如：在发呆、刚好被拍到、若有所思……</span></div>
+    <textarea class="q-input" id="q8" placeholder="不需要精确，感觉对了就好"></textarea>
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">09 · <em>有没有你特别不想要的感觉？</em><br><span style="font-size:11px;color:var(--text-dim);">比如：太商业感、pose太明显、表情太用力……直接说，不会介意。</span></div>
+    <textarea class="q-input" id="q9" placeholder="说出来比说不出来更有帮助"></textarea>
+  </div>
+
+  <div class="nav">
+    <button class="btn-back" onclick="goTo(1)">← 返回</button>
+    <button class="btn-next" onclick="goTo(3)">继续 →</button>
+  </div>
+</div>
+
+<!-- SECTION 3 -->
+<div class="section" id="sec3">
+  <div class="section-eyebrow">Part 03 <span class="section-count">· 外形与穿搭</span></div>
+  <div class="section-title">关于<br><em style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);">你的样子</em></div>
+  <div class="section-sub">这些信息帮我决定拍哪个角度、用什么构图方式。</div>
+
+  <div class="q-block">
+    <div class="q-label">10 · <em>你觉得自己哪个角度或哪个部位拍出来比较好看？</em><br><span style="font-size:11px;color:var(--text-dim);">或者：你觉得自己拍照最大的困扰是什么？</span></div>
+    <textarea class="q-input" id="q10" placeholder="侧脸、眼睛、不知道……都可以说"></textarea>
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">11 · <em>你平时的穿衣风格？</em><br><span style="font-size:11px;color:var(--text-dim);">可以多选</span></div>
+    <div class="options">
+      <label class="option-item" onclick="selectCheck(this,'q11')">
+        <input type="checkbox" value="简单素色、极简"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">简单素色、极简</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q11')">
+        <input type="checkbox" value="复古/vintage"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">复古 / vintage</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q11')">
+        <input type="checkbox" value="日系/韩系"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">日系 / 韩系</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q11')">
+        <input type="checkbox" value="街头/oversize"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">街头 / oversize</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q11')">
+        <input type="checkbox" value="优雅/知性"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">优雅 / 知性</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q11')">
+        <input type="checkbox" value="民族风/特色面料"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">民族风 / 特色面料</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q11')">
+        <input type="checkbox" value="other-q11"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text" style="flex:1;">其他<input class="other-input" id="q11other" placeholder="说说看…" onclick="event.stopPropagation()"></div>
+      </label>
+    </div>
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">12 · <em>这次拍摄大概想穿什么？</em><br><span style="font-size:11px;color:var(--text-dim);">不确定的话，告诉我衣柜里有什么颜色和风格，我来给建议。</span></div>
+    <textarea class="q-input" id="q12" placeholder="具体描述，或者说"不知道，帮我选"都可以"></textarea>
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">13 · <em>你衣柜里主要是哪类颜色？</em><br><span style="font-size:11px;color:var(--text-dim);">可以多选</span></div>
+    <div class="options">
+      <label class="option-item" onclick="selectCheck(this,'q13')">
+        <input type="checkbox" value="深色系（黑、深蓝、深绿、棕）"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">深色系（黑、深蓝、深绿、棕）</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q13')">
+        <input type="checkbox" value="中性色（米、灰、白、卡其）"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">中性色（米、灰、白、卡其）</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q13')">
+        <input type="checkbox" value="亮色/鲜艳色"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">亮色 / 鲜艳色</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q13')">
+        <input type="checkbox" value="花纹/印花类"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">花纹 / 印花类</div>
+      </label>
+    </div>
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">14 · <em>关于妆容，你打算怎么处理？</em></div>
+    <div class="options">
+      <label class="option-item radio" onclick="selectRadio(this,'q14')">
+        <input type="radio" name="q14" value="不化妆，素颜"><div class="option-mark"></div><div class="option-text">不化妆，素颜</div>
+      </label>
+      <label class="option-item radio" onclick="selectRadio(this,'q14')">
+        <input type="radio" name="q14" value="裸妆/淡妆"><div class="option-mark"></div><div class="option-text">裸妆 / 淡妆</div>
+      </label>
+      <label class="option-item radio" onclick="selectRadio(this,'q14')">
+        <input type="radio" name="q14" value="日常妆"><div class="option-mark"></div><div class="option-text">日常妆</div>
+      </label>
+      <label class="option-item radio" onclick="selectRadio(this,'q14')">
+        <input type="radio" name="q14" value="有点精致，认真画了"><div class="option-mark"></div><div class="option-text">有点精致，认真画了</div>
+      </label>
+      <label class="option-item radio" onclick="selectRadio(this,'q14')">
+        <input type="radio" name="q14" value="不确定，你来建议"><div class="option-mark"></div><div class="option-text">不确定，你来建议</div>
+      </label>
+    </div>
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">15 · <em>发型打算怎么弄？</em></div>
+    <input class="q-input" id="q15" type="text" placeholder="放下来、盘起来、扎马尾、随意……">
+  </div>
+
+  <div class="nav">
+    <button class="btn-back" onclick="goTo(2)">← 返回</button>
+    <button class="btn-next" onclick="goTo(4)">继续 →</button>
+  </div>
+</div>
+
+<!-- SECTION 4 -->
+<div class="section" id="sec4">
+  <div class="section-eyebrow">Part 04 <span class="section-count">· 场景与时间</span></div>
+  <div class="section-title">在哪里，<br><em style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);">什么时候</em></div>
+  <div class="section-sub">帮我安排地点和时间，也告诉我你有没有特别想去的地方。</div>
+
+  <div class="q-block">
+    <div class="q-label">16 · <em>你对拍摄场景有偏好吗？</em></div>
+    <div class="options">
+      <label class="option-item" onclick="selectCheck(this,'q16')">
+        <input type="checkbox" value="室内自然光（窗边、房间、安静的空间）"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">室内自然光（窗边、房间、安静的空间）</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q16')">
+        <input type="checkbox" value="室外日常感（街边、建筑、普通的城市角落）"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">室外日常感（街边、建筑、普通的城市角落）</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q16')">
+        <input type="checkbox" value="夜晚/傍晚也可以"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">夜晚 / 傍晚也可以</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q16')">
+        <input type="checkbox" value="交给你决定，我没有偏好"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">交给你决定，我没有偏好</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q16')">
+        <input type="checkbox" value="other-q16"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text" style="flex:1;">我有个想去的地方<input class="other-input" id="q16other" placeholder="说说在哪里…" onclick="event.stopPropagation()"></div>
+      </label>
+    </div>
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">17 · <em>你方便的时间段？</em><br><span style="font-size:11px;color:var(--text-dim);">上午10–12点光线最好，但我会尽量配合你。</span></div>
+    <div class="options">
+      <label class="option-item" onclick="selectCheck(this,'q17')">
+        <input type="checkbox" value="工作日上午"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">工作日上午</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q17')">
+        <input type="checkbox" value="工作日下午"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">工作日下午</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q17')">
+        <input type="checkbox" value="周末上午"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">周末上午</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q17')">
+        <input type="checkbox" value="周末下午"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">周末下午</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q17')">
+        <input type="checkbox" value="傍晚/夜晚都可以"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">傍晚 / 夜晚都可以</div>
+      </label>
+    </div>
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">18 · <em>有没有想在照片里呈现的具体东西？</em><br><span style="font-size:11px;color:var(--text-dim);">某件有意义的衣服、某个你常去的地方、想纪念某件事……</span></div>
+    <textarea class="q-input" id="q18" placeholder="有的话说说，没有也没关系"></textarea>
+  </div>
+
+  <div class="nav">
+    <button class="btn-back" onclick="goTo(3)">← 返回</button>
+    <button class="btn-next" onclick="goTo(5)">继续 →</button>
+  </div>
+</div>
+
+<!-- SECTION 5 -->
+<div class="section" id="sec5">
+  <div class="section-eyebrow">Part 05 <span class="section-count">· 成片与其他</span></div>
+  <div class="section-title">最后<br><em style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);">几件小事</em></div>
+  <div class="section-sub">快好了。这几个问题帮我更好地处理后期，也保护你的感受。</div>
+
+  <div class="q-block">
+    <div class="q-label">19 · <em>照片修到什么程度你会觉得好？</em></div>
+    <div class="options">
+      <label class="option-item radio" onclick="selectRadio(this,'q19')">
+        <input type="radio" name="q19" value="尽量自然，能看出是我就行"><div class="option-mark"></div><div class="option-text">尽量自然，能看出是我就行</div>
+      </label>
+      <label class="option-item radio" onclick="selectRadio(this,'q19')">
+        <input type="radio" name="q19" value="适当修一修，调调色就好"><div class="option-mark"></div><div class="option-text">适当修一修，调调色就好</div>
+      </label>
+      <label class="option-item radio" onclick="selectRadio(this,'q19')">
+        <input type="radio" name="q19" value="皮肤修细腻一点，但不要假"><div class="option-mark"></div><div class="option-text">皮肤修细腻一点，但不要假</div>
+      </label>
+      <label class="option-item radio" onclick="selectRadio(this,'q19')">
+        <input type="radio" name="q19" value="随你，我信任你的审美"><div class="option-mark"></div><div class="option-text">随你，我信任你的审美</div>
+      </label>
+    </div>
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">20 · <em>有没有特别不想修的或者特别在意的地方？</em><br><span style="font-size:11px;color:var(--text-dim);">直接说，不会介意。比如：不想让脸变小、不喜欢磨皮……</span></div>
+    <textarea class="q-input" id="q20" placeholder="没有也可以跳过"></textarea>
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">21 · <em>拍完之后这组照片你打算怎么用？</em><br><span style="font-size:11px;color:var(--text-dim);">可以多选</span></div>
+    <div class="options">
+      <label class="option-item" onclick="selectCheck(this,'q21')">
+        <input type="checkbox" value="发小红书/微博/ins"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">发小红书 / 微博 / ins</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q21')">
+        <input type="checkbox" value="存着自己看，不发"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">存着自己看，不发</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q21')">
+        <input type="checkbox" value="头像/朋友圈"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text">头像 / 朋友圈</div>
+      </label>
+      <label class="option-item" onclick="selectCheck(this,'q21')">
+        <input type="checkbox" value="other-q21"><div class="option-mark"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="option-text" style="flex:1;">其他<input class="other-input" id="q21other" placeholder="说说…" onclick="event.stopPropagation()"></div>
+      </label>
+    </div>
+  </div>
+
+  <div class="q-block">
+    <div class="q-label">22 · <em>有什么想提前告诉我的，或者想问我的？</em></div>
+    <textarea class="q-input" id="q22" placeholder="任何问题、顾虑、期待，都可以写在这里"></textarea>
+  </div>
+
+  <div class="nav">
+    <button class="btn-back" onclick="goTo(4)">← 返回</button>
+    <button class="btn-next" onclick="finish()">提交问卷 →</button>
+  </div>
+</div>
+
+<!-- RESULT PAGE -->
+<div class="result-page" id="resultPage">
+  <div class="result-eyebrow">完成</div>
+  <div class="result-title">收到了，<br><em style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);">谢谢你。</em></div>
+  <div class="result-sub">我会在拍摄前认真读你写的每一条。期待见面。</div>
+
+  <div class="result-box" id="resultBox"></div>
+
+  <button class="btn-copy" id="copyBtn" onclick="copyResult()">复制问卷回答 · 发给摄影师</button>
+  <div class="result-note">复制后直接粘贴发送给摄影师即可<br>或者截图发送也可以</div>
+</div>
+
+</div>
+</div>
+
+</div>
+
+<script>
+const answers = {};
+
+function goTo(n) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const sec = document.getElementById('sec' + n);
+  if (sec) {
+    sec.classList.add('active');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+  const fill = [0, 20, 40, 60, 80, 100][n] || 100;
+  document.getElementById('progressFill').style.width = fill + '%';
+  document.getElementById('progressLabel').textContent = '第 ' + n + ' 部分，共 5 部分';
+  collectAnswers();
+}
+
+function selectRadio(el, name) {
+  document.querySelectorAll('[name="' + name + '"]').forEach(r => {
+    r.closest('.option-item').classList.remove('selected');
+  });
+  el.classList.add('selected');
+}
+
+function selectCheck(el, name) {
+  el.classList.toggle('selected');
+}
+
+function collectAnswers() {
+  answers.q1 = document.getElementById('q1')?.value || '';
+  answers.q2 = document.getElementById('q2')?.value || '';
+  answers.q3 = document.getElementById('q3')?.value || '';
+  answers.q4 = document.querySelector('[name="q4"]:checked')?.value || '';
+  answers.q5 = document.getElementById('q5')?.value || '';
+  answers.q6 = [...document.querySelectorAll('.option-item.selected input[type="checkbox"]')]
+    .filter(i => i.closest('[onclick*="q6"]'))
+    .map(i => i.value === 'other-q6' ? (document.getElementById('q6other')?.value || '其他') : i.value).join('、') || '';
+  answers.q7 = document.getElementById('q7')?.value || '';
+  answers.q8 = document.getElementById('q8')?.value || '';
+  answers.q9 = document.getElementById('q9')?.value || '';
+  answers.q10 = document.getElementById('q10')?.value || '';
+  answers.q11 = [...document.querySelectorAll('.option-item.selected input[type="checkbox"]')]
+    .filter(i => i.closest('[onclick*="q11"]'))
+    .map(i => i.value === 'other-q11' ? (document.getElementById('q11other')?.value || '其他') : i.value).join('、') || '';
+  answers.q12 = document.getElementById('q12')?.value || '';
+  answers.q13 = [...document.querySelectorAll('.option-item.selected input[type="checkbox"]')]
+    .filter(i => i.closest('[onclick*="q13"]'))
+    .map(i => i.value).join('、') || '';
+  answers.q14 = document.querySelector('[name="q14"]:checked')?.value || '';
+  answers.q15 = document.getElementById('q15')?.value || '';
+  answers.q16 = [...document.querySelectorAll('.option-item.selected input[type="checkbox"]')]
+    .filter(i => i.closest('[onclick*="q16"]'))
+    .map(i => i.value === 'other-q16' ? (document.getElementById('q16other')?.value || '') : i.value).join('、') || '';
+  answers.q17 = [...document.querySelectorAll('.option-item.selected input[type="checkbox"]')]
+    .filter(i => i.closest('[onclick*="q17"]'))
+    .map(i => i.value).join('、') || '';
+  answers.q18 = document.getElementById('q18')?.value || '';
+  answers.q19 = document.querySelector('[name="q19"]:checked')?.value || '';
+  answers.q20 = document.getElementById('q20')?.value || '';
+  answers.q21 = [...document.querySelectorAll('.option-item.selected input[type="checkbox"]')]
+    .filter(i => i.closest('[onclick*="q21"]'))
+    .map(i => i.value === 'other-q21' ? (document.getElementById('q21other')?.value || '其他') : i.value).join('、') || '';
+  answers.q22 = document.getElementById('q22')?.value || '';
+}
+
+function finish() {
+  collectAnswers();
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressLabel').textContent = '已完成';
+
+  const name = answers.q1 || '（未填写）';
+  const lines = [
+    '━━━━━━━━━━━━━━━━',
+    '拍摄前问卷 · ' + name,
+    '━━━━━━━━━━━━━━━━',
+    '',
+    '【认识你】',
+    '称呼：' + (answers.q1 || '—'),
+    '职业/身份：' + (answers.q2 || '—'),
+    '三个词：' + (answers.q3 || '—'),
+    '拍照经验：' + (answers.q4 || '—'),
+    '镜头前状态：' + (answers.q5 || '—'),
+    '',
+    '【审美与感觉】',
+    '希望的感觉：' + (answers.q6 || '—'),
+    '参考图/账号：' + (answers.q7 || '—'),
+    '想要的状态：' + (answers.q8 || '—'),
+    '不想要的感觉：' + (answers.q9 || '—'),
+    '',
+    '【外形与穿搭】',
+    '好看的角度/困扰：' + (answers.q10 || '—'),
+    '穿衣风格：' + (answers.q11 || '—'),
+    '这次想穿：' + (answers.q12 || '—'),
+    '衣柜主色：' + (answers.q13 || '—'),
+    '妆容：' + (answers.q14 || '—'),
+    '发型：' + (answers.q15 || '—'),
+    '',
+    '【场景与时间】',
+    '场景偏好：' + (answers.q16 || '—'),
+    '可用时间：' + (answers.q17 || '—'),
+    '想呈现的东西：' + (answers.q18 || '—'),
+    '',
+    '【成片与其他】',
+    '修图程度：' + (answers.q19 || '—'),
+    '特别注意事项：' + (answers.q20 || '—'),
+    '照片用途：' + (answers.q21 || '—'),
+    '其他想说的：' + (answers.q22 || '—'),
+    '',
+    '━━━━━━━━━━━━━━━━',
+  ];
+
+  document.getElementById('resultBox').textContent = lines.join('\n');
+  document.getElementById('resultPage').classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function copyResult() {
+  const text = document.getElementById('resultBox').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '已复制 ✓';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '复制问卷回答 · 发给摄影师';
+      btn.classList.remove('copied');
+    }, 2500);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '已复制 ✓';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '复制问卷回答 · 发给摄影师';
+      btn.classList.remove('copied');
+    }, 2500);
+  });
+}
+</script>
+</body>
+</html>
